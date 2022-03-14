@@ -178,9 +178,22 @@ void sidekiq_rx_impl::set_rx_gain(double value) {
     double updated_cal_offset=0;
     double prev_cal_offset=0;
     bool found_gain_index=false;
+    double gain_percent;
+    double index_percent;
 
+    usr_gain = value;
     get_rx_gain_range( &min_cal_offset, &max_cal_offset );
     printf("Gain range for current frequency is %f - %f\n", min_cal_offset, max_cal_offset);
+    gain_percent = (max_cal_offset - min_cal_offset) / 100;
+//    printf("Gain per percent %f\n", gain_percent);
+//    printf("max_index %d, min_index %d\n", sidekiq_params.rx_param[hdl].gain_index_max, sidekiq_params.rx_param[hdl].gain_index_min);
+        index_percent = (double)(sidekiq_params.rx_param[hdl].gain_index_max - sidekiq_params.rx_param[hdl].gain_index_min) /100.0;
+//    printf("Index per percent %f\n", index_percent);
+
+
+//    printf("%f percent gain %f, index %f\n", value, (gain_percent * value), (index_percent * value));
+    value = gain_percent * value + min_cal_offset;
+    printf("value %f\n", value);
 
     if( value <= min_cal_offset )
     {
@@ -259,6 +272,8 @@ void sidekiq_rx_impl::set_rx_frequency(double value) {
 	if (set_frequency(value)) {
 		tag_now = true;
 	}
+    printf("calling set gain\n");
+	set_rx_gain(usr_gain);
 }
 
 void sidekiq_rx_impl::output_telemetry_message() {

@@ -75,6 +75,7 @@ namespace gr {
 			uint32_t bandwidth;
 			size_t sidekiq_system_time_interval_nanos;
 			size_t timestamp_frequency;
+			double usr_gain;
 			gr::sidekiq::sidekiq_functions<HdlType> sidekiq_functions;
                         skiq_param_t sidekiq_params;
                         float adc_scaling;
