@@ -23,7 +23,44 @@
 #include <volk/volk.h>
 #include <boost/algorithm/string.hpp>
 #include <boost/foreach.hpp>
+#include <pthread.h>
 #include "sidekiq_tx_impl.h"
+
+#define NUM_BLOCKS  20
+static uint32_t complete_count;
+// mutex to protect updates to the tx buffer
+static pthread_mutex_t tx_buf_mutex;
+
+// mutex and condition variable to signal when the tx queue may have room available
+static pthread_mutex_t space_avail_mutex;
+static pthread_cond_t space_avail_cond;
+
+static void tx_complete( int32_t status, skiq_tx_block_t *p_data, void *p_user )
+{
+    if( status != 0 )
+    {
+        fprintf(stderr, "Error: packet %" PRIu32 " failed with status %d\n",
+                complete_count, status);
+    }
+
+    // increment the packet completed count
+    complete_count++;
+
+    pthread_mutex_lock( &tx_buf_mutex );
+    // update the in use status of the packet just completed
+    if (p_user)
+    {
+        *(int32_t*)p_user = 0;
+    }
+     pthread_mutex_unlock( &tx_buf_mutex );
+
+    // signal to the other thread that there may be space available now that a
+    // packet send has completed
+    pthread_mutex_lock( &space_avail_mutex );
+    pthread_cond_signal(&space_avail_cond);
+    pthread_mutex_unlock( &space_avail_mutex );
+
+}
 
 using namespace gr::sidekiq;
 using pmt::pmt_t;
@@ -108,7 +145,13 @@ sidekiq_tx_impl::sidekiq_tx_impl(
 	set_tx_bandwidth(bandwidth);
 	set_tx_suppress_tune_transients(suppress_tune_transients);
 	set_tx_attenuation(attenuation);
-//	get_filter_parameters();
+
+    complete_count = 0;
+    tx_buf_mutex = PTHREAD_MUTEX_INITIALIZER;
+    space_avail_mutex = PTHREAD_MUTEX_INITIALIZER;
+    space_avail_cond = PTHREAD_COND_INITIALIZER;
+
+    //	get_filter_parameters();
 	if (skiq_write_tx_data_flow_mode(card, hdl, this->dataflow_mode) != 0) {
 		printf("Error: could not set TX dataflow mode\n");
         throw std::runtime_error("Failure: skiq_write_tx_flow_mode");
@@ -129,15 +172,49 @@ sidekiq_tx_impl::sidekiq_tx_impl(
 		printf("Error: unable to configure TX block size: %d\n", tx_buffer_size);
         throw std::runtime_error("Failure: skiq_write_tx_block_size");
 	}
-	if (skiq_write_tx_transfer_mode(card, skiq_tx_hdl_A1, skiq_tx_transfer_mode_sync) != 0) {
+	if (skiq_write_tx_transfer_mode(card, skiq_tx_hdl_A1, skiq_tx_transfer_mode_async) != 0) {
 		printf("Error: unable to configure TX channel mode\n");
         throw std::runtime_error("Failure: skiq_write_tx_transfer_mode");
 	}
+    if( skiq_write_num_tx_threads(card, 4) != 0 ) {
+		printf("Error: unable to configure TX number of threads\n");
+        throw std::runtime_error("Failure: skiq_write_tx_transfer_mode");
+	}
+    if(skiq_register_tx_complete_callback( card, &tx_complete ) != 0){
+		printf("Error: unable to configure TX number of threads\n");
+        throw std::runtime_error("Failure: skiq_write_tx_transfer_mode");
+	}
+
+
 	if (skiq_write_iq_pack_mode(card, SIDEKIQ_IQ_PACK_MODE_UNPACKED) != 0) {
 		printf("Error: unable to set iq pack mode to unpacked%d\n", SIDEKIQ_IQ_PACK_MODE_UNPACKED);
         throw std::runtime_error("Failure: skiq_write_iq_pack_mode");
 	}
-	tx_data_block = skiq_tx_block_allocate(tx_buffer_size);
+
+    p_tx_blocks = (skiq_tx_block_t **)calloc( NUM_BLOCKS, sizeof( skiq_tx_block_t * ));
+    if( p_tx_blocks == NULL )
+    {
+        fprintf(stderr, "Error: failed to allocate memory for TX blocks.\n");
+        throw std::runtime_error("Failure: calloc p_tx_blocks");
+    }
+
+    // allocate for # blocks
+    p_tx_status = (int32_t *)calloc( NUM_BLOCKS, sizeof(*p_tx_status) );
+    if( p_tx_status == NULL )
+    {
+        fprintf(stderr, "Error: failed to allocate memory for TX status.\n");
+        throw std::runtime_error("Failure: calloc p_tx_status");
+    }
+
+    for (int i = 0; i < NUM_BLOCKS; i++)
+    {
+        /* allocate a transmit block by number of words */
+        p_tx_blocks[i] = skiq_tx_block_allocate( tx_buffer_size );
+        p_tx_status[i] = 0;
+    }
+
+    curr_block = 0;
+
 	temp_buffer.resize(tx_buffer_size);
 
 
@@ -306,6 +383,8 @@ void sidekiq_tx_impl::check_burst_length(size_t current_tag_offset, size_t burst
 	previous_burst_tag_offset = current_tag_offset;
 }
 
+
+
 //TODO:
 //1. enable gps timestamp on next pps
 //2. handle message commands (done)
@@ -357,19 +436,33 @@ int sidekiq_tx_impl::work(
 				dac_scaling,
 				static_cast<unsigned int>(tx_buffer_size * 2));
 		volk_32fc_convert_16ic(
-				reinterpret_cast<lv_16sc_t *>(tx_data_block->data),
+				reinterpret_cast<lv_16sc_t *>(p_tx_blocks[curr_block]->data),
 				reinterpret_cast<const lv_32fc_t*>(&temp_buffer[0]),
 				tx_buffer_size);
 		
-		skiq_tx_set_block_timestamp(tx_data_block, timestamp);
-		result = skiq_transmit(card, hdl, tx_data_block, nullptr);
-		timestamp += tx_buffer_size;
-		if (result == 0) {
-			samples_written += tx_buffer_size;
-			in += tx_buffer_size;
-		} else {
+		skiq_tx_set_block_timestamp(p_tx_blocks[curr_block], timestamp);
+
+		result = skiq_transmit(card, hdl, p_tx_blocks[curr_block], &(p_tx_status[curr_block]));
+        /* check to see if the TX queue is full, if so wait for a released buffer */ 
+        if( result == SKIQ_TX_ASYNC_SEND_QUEUE_FULL )
+        {
+            // update the in use status since we didn't actually send it yet
+            pthread_mutex_lock( &tx_buf_mutex );
+            p_tx_status[curr_block] = 0;
+            pthread_mutex_unlock( &tx_buf_mutex );
+
+            pthread_mutex_lock( &space_avail_mutex );
+            pthread_cond_wait( &space_avail_cond, &space_avail_mutex );
+            pthread_mutex_unlock( &space_avail_mutex );
+        }
+        else if ( result != 0 ) {
 			printf("Info: sidekiq transmit failed with error: %d\n", result);
-		}
+		} else {
+            samples_written += tx_buffer_size;
+            in += tx_buffer_size;
+            timestamp += tx_buffer_size;
+            curr_block = (curr_block + 1) % NUM_BLOCKS;
+        }
 	}
 	
 	return samples_written;

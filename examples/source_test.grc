@@ -45,7 +45,7 @@ blocks:
     start: .1e6
     step: 0.1e6
     stop: max_sample_rate
-    value: 20e6
+    value: '800000'
     widget: counter_slider
   states:
     bus_sink: false
@@ -87,7 +87,7 @@ blocks:
     start: '0'
     step: '1'
     stop: '2000'
-    value: '80'
+    value: '90'
     widget: counter_slider
   states:
     bus_sink: false
@@ -120,7 +120,7 @@ blocks:
     start: 1e6
     step: 1e6
     stop: max_sample_rate
-    value: 20e6
+    value: 1e6
     widget: counter_slider
   states:
     bus_sink: false
@@ -512,3 +512,4 @@ connections:
 
 metadata:
   file_format: 1
+  grc_version: 3.10.3.0

@@ -24,6 +24,8 @@
 
 #include <sidekiq/sidekiq_tx.h>
 #include <sidekiq/sidekiq_base.h>
+#include <pthread.h>
+
 
 using pmt::pmt_t;
 
@@ -63,9 +65,13 @@ namespace gr {
 
 			void set_tx_bandwidth(double value) override;
 
-			void set_tx_suppress_tune_transients(bool value);
+			void set_tx_suppress_tune_transients(bool value) override;
 
 			void set_tx_filter_override_taps(const std::vector<float> &taps) override;
+
+
+        public:
+            
 
 		private:
 			bool suppress_tune_transients;
@@ -75,12 +81,18 @@ namespace gr {
 			uint64_t previous_burst_tag_offset{};
 			skiq_tx_flow_mode_t dataflow_mode;
 			uint32_t last_num_tx_errors{};
+
 			uint16_t tx_buffer_size;
-			skiq_tx_block_t *tx_data_block;
+			skiq_tx_block_t **p_tx_blocks;
+            int32_t *p_tx_status;
+            uint32_t curr_block;
+
 			size_t last_status_update_sample{};
 			size_t status_update_rate_in_samples{};
 			std::vector<int16_t> filter_override_taps;
 			std::vector<gr_complex> temp_buffer;
+
+
 
 			uint16_t get_tx_attenuation();
 			void output_telemetry_message();

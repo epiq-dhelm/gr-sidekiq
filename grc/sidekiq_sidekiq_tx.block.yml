@@ -71,8 +71,8 @@ parameters:
   label: Buffer Size
   dtype: int
   default: 1020
-  options: [1020, 4092, 16380, 32764]
-  option_labels: ['1K', '4K', '16k', '32k']
+  options: [1020, 4092, 8188, 16380, 32764]
+  option_labels: ['1K', '4K', '8K', '16k', '32k']
 
 #  Make one 'inputs' list entry per input and one 'outputs' list entry per output.
 #  Keys include:
