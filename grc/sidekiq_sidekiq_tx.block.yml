@@ -4,7 +4,7 @@ category: '[sidekiq]'
 
 templates:
   imports: import sidekiq
-  make: sidekiq.sidekiq_tx(${card}, ${handle}, ${sample_rate}, ${attenuation}, ${frequency}, ${bandwidth}, ${sync}, ${suppress_tune_transients}, ${dataflow_mode}, ${buffer_size} )
+  make: sidekiq.sidekiq_tx(${card}, ${handle}, ${sample_rate}, ${attenuation}, ${frequency}, ${bandwidth}, ${sync}, ${suppress_tune_transients}, ${dataflow_mode}, ${threads}, ${buffer_size} )
   callbacks: 
   - set_tx_sample_rate(${sample_rate})
   - set_tx_attenuation(${attenuation})
@@ -67,10 +67,14 @@ parameters:
 - id: filter_override_taps
   label: Filter Override Taps
   dtype: real_vector
+- id: threads
+  label: Threads
+  dtype: int
+  default: 4
 - id: buffer_size
   label: Buffer Size
   dtype: int
-  default: 1020
+  default: 4092
   options: [1020, 4092, 8188, 16380, 32764]
   option_labels: ['1K', '4K', '8K', '16k', '32k']
 

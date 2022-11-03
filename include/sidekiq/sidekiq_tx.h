@@ -46,6 +46,7 @@ namespace gr {
                 int sync_type,
                 bool suppress_tune_transients,
                 uint8_t dataflow_mode,
+                int threads,
                 int buffer_size);
 
 			virtual void set_tx_sample_rate(double value) = 0;

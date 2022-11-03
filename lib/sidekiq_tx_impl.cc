@@ -37,7 +37,8 @@ static pthread_cond_t space_avail_cond;
 
 static void tx_complete( int32_t status, skiq_tx_block_t *p_data, void *p_user )
 {
-    if( status != 0 )
+    /* -2 happens when there are outstanding buffers and we stop streaming */
+    if( status != 0 && status != -2)
     {
         fprintf(stderr, "Error: packet %" PRIu32 " failed with status %d\n",
                 complete_count, status);
@@ -88,6 +89,7 @@ sidekiq_tx::sptr sidekiq_tx::make(
 		int sync_type,
 		bool suppress_tune_transients,
 		uint8_t dataflow_mode,
+        int threads,
 		int buffer_size) {  
 	return gnuradio::get_initial_sptr(
 			new sidekiq_tx_impl(
@@ -100,6 +102,7 @@ sidekiq_tx::sptr sidekiq_tx::make(
 					sync_type,
 					suppress_tune_transients,
 					dataflow_mode,
+                    threads,
 					buffer_size
 			));
 }
@@ -114,6 +117,7 @@ sidekiq_tx_impl::sidekiq_tx_impl(
 		int sync_type,
 		bool suppress_tune_transients,
 		uint8_t dataflow_mode,
+        int threads,
 		int buffer_size) 
 		: gr::sync_block(
 		"sidekiq_tx",
@@ -151,7 +155,7 @@ sidekiq_tx_impl::sidekiq_tx_impl(
     space_avail_mutex = PTHREAD_MUTEX_INITIALIZER;
     space_avail_cond = PTHREAD_COND_INITIALIZER;
 
-    //	get_filter_parameters();
+    
 	if (skiq_write_tx_data_flow_mode(card, hdl, this->dataflow_mode) != 0) {
 		printf("Error: could not set TX dataflow mode\n");
         throw std::runtime_error("Failure: skiq_write_tx_flow_mode");
@@ -168,21 +172,26 @@ sidekiq_tx_impl::sidekiq_tx_impl(
             throw std::runtime_error("Failure: skiq_write_chan_mode");
         }
     }
+
 	if (skiq_write_tx_block_size(card, hdl, tx_buffer_size) != 0) {
 		printf("Error: unable to configure TX block size: %d\n", tx_buffer_size);
         throw std::runtime_error("Failure: skiq_write_tx_block_size");
 	}
+    else {
+        printf("Info: TX block size %d\n", tx_buffer_size);
+    }
+
 	if (skiq_write_tx_transfer_mode(card, skiq_tx_hdl_A1, skiq_tx_transfer_mode_async) != 0) {
 		printf("Error: unable to configure TX channel mode\n");
         throw std::runtime_error("Failure: skiq_write_tx_transfer_mode");
 	}
-    if( skiq_write_num_tx_threads(card, 4) != 0 ) {
+    if( skiq_write_num_tx_threads(card, threads) != 0 ) {
 		printf("Error: unable to configure TX number of threads\n");
         throw std::runtime_error("Failure: skiq_write_tx_transfer_mode");
 	}
     if(skiq_register_tx_complete_callback( card, &tx_complete ) != 0){
 		printf("Error: unable to configure TX number of threads\n");
-        throw std::runtime_error("Failure: skiq_write_tx_transfer_mode");
+        throw std::runtime_error("Failure: skiq_register_tx_complete_callback");
 	}
 
 
@@ -190,6 +199,12 @@ sidekiq_tx_impl::sidekiq_tx_impl(
 		printf("Error: unable to set iq pack mode to unpacked%d\n", SIDEKIQ_IQ_PACK_MODE_UNPACKED);
         throw std::runtime_error("Failure: skiq_write_iq_pack_mode");
 	}
+
+    if (skiq_write_iq_order_mode(card, skiq_iq_order_iq) != 0) {
+          printf("Error: unable to set iq order mode to iq \n");
+          throw std::runtime_error("Failure: skiq_write_iq_pack_mode");
+    }
+
 
     p_tx_blocks = (skiq_tx_block_t **)calloc( NUM_BLOCKS, sizeof( skiq_tx_block_t * ));
     if( p_tx_blocks == NULL )

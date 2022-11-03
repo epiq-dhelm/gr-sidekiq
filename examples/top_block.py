@@ -76,27 +76,27 @@ class top_block(gr.top_block, Qt.QWidget):
         ##################################################
         # Variables
         ##################################################
-        self.sample_rate = sample_rate = 50e6
-        self.tone_freq = tone_freq = 2000000
+        self.sample_rate = sample_rate = 60e6
+        self.tone_freq = tone_freq = 3000000
         self.suppress_tune_transients_chooser = suppress_tune_transients_chooser = 0
-        self.source_min_output_buffer = source_min_output_buffer = 2**14*4
+        self.source_min_output_buffer = source_min_output_buffer = 2**14*8
         self.max_sample_rate = max_sample_rate = 122.88e6
         self.max_attenuation = max_attenuation = 359
         self.center_freq = center_freq = 1000e6
         self.bandwidth = bandwidth = sample_rate * .8
-        self.atten_quart_db = atten_quart_db = 50
+        self.atten_quart_db = atten_quart_db = 10
 
         ##################################################
         # Blocks
         ##################################################
-        self._sample_rate_range = Range(0.1e6, max_sample_rate, 0.1e6, 50e6, 200)
+        self._sample_rate_range = Range(0.1e6, max_sample_rate, 0.1e6, 60e6, 200)
         self._sample_rate_win = RangeWidget(self._sample_rate_range, self.set_sample_rate, "Sample Rate", "counter_slider", float, QtCore.Qt.Horizontal)
         self.top_grid_layout.addWidget(self._sample_rate_win, 1, 0, 1, 1)
         for r in range(1, 2):
             self.top_grid_layout.setRowStretch(r, 1)
         for c in range(0, 1):
             self.top_grid_layout.setColumnStretch(c, 1)
-        self._tone_freq_range = Range(1000000, 20000000, 1000000, 2000000, 200)
+        self._tone_freq_range = Range(1000000, 20000000, 1000000, 3000000, 200)
         self._tone_freq_win = RangeWidget(self._tone_freq_range, self.set_tone_freq, "'tone_freq'", "counter_slider", float, QtCore.Qt.Horizontal)
         self.top_layout.addWidget(self._tone_freq_win)
         self._center_freq_range = Range(100e6, 6000e6, 1e6, 1000e6, 200)
@@ -113,7 +113,7 @@ class top_block(gr.top_block, Qt.QWidget):
             self.top_grid_layout.setRowStretch(r, 1)
         for c in range(1, 2):
             self.top_grid_layout.setColumnStretch(c, 1)
-        self._atten_quart_db_range = Range(0, max_attenuation, 1, 50, 200)
+        self._atten_quart_db_range = Range(0, max_attenuation, 1, 10, 200)
         self._atten_quart_db_win = RangeWidget(self._atten_quart_db_range, self.set_atten_quart_db, "Attenuation ", "counter_slider", float, QtCore.Qt.Horizontal)
         self.top_grid_layout.addWidget(self._atten_quart_db_win, 0, 1, 1, 1)
         for r in range(0, 1):
@@ -136,10 +136,10 @@ class top_block(gr.top_block, Qt.QWidget):
             lambda i: self.set_suppress_tune_transients_chooser(self._suppress_tune_transients_chooser_options[i]))
         # Create the radio buttons
         self.top_layout.addWidget(self._suppress_tune_transients_chooser_tool_bar)
-        self.sidekiq_tx_0 = sidekiq.sidekiq_tx(2, 0, sample_rate, atten_quart_db, center_freq, bandwidth, 1, 0, 0, 8188 )
+        self.sidekiq_tx_0 = sidekiq.sidekiq_tx(2, 0, sample_rate, atten_quart_db, center_freq, bandwidth, 3, 0, 0, 8, 32764 )
         self.blocks_throttle_0 = blocks.throttle(gr.sizeof_gr_complex*1, sample_rate,True)
+        self.blocks_throttle_0.set_min_output_buffer(source_min_output_buffer)
         self.analog_sig_source_x_0 = analog.sig_source_c(sample_rate, analog.GR_COS_WAVE, tone_freq, 1, 0, 0)
-        self.analog_sig_source_x_0.set_min_output_buffer(source_min_output_buffer)
 
 
         ##################################################
