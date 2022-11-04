@@ -132,7 +132,7 @@ blocks:
     start: 0.1e6
     step: 0.1e6
     stop: max_sample_rate
-    value: 60e6
+    value: 20e6
     widget: counter_slider
   states:
     bus_sink: false
@@ -252,7 +252,7 @@ blocks:
     alias: ''
     attenuation: atten_quart_db
     bandwidth: bandwidth
-    buffer_size: '32764'
+    buffer_size: '8188'
     card: '0'
     comment: ''
     dataflow_mode: '0'
@@ -263,8 +263,8 @@ blocks:
     minoutbuf: '0'
     sample_rate: sample_rate
     suppress_tune_transients: '0'
-    sync: '3'
-    threads: '8'
+    sync: '1'
+    threads: '4'
   states:
     bus_sink: false
     bus_source: false

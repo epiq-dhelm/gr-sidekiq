@@ -136,7 +136,7 @@ class top_block(gr.top_block, Qt.QWidget):
             lambda i: self.set_suppress_tune_transients_chooser(self._suppress_tune_transients_chooser_options[i]))
         # Create the radio buttons
         self.top_layout.addWidget(self._suppress_tune_transients_chooser_tool_bar)
-        self.sidekiq_tx_0 = sidekiq.sidekiq_tx(2, 0, sample_rate, atten_quart_db, center_freq, bandwidth, 3, 0, 0, 8, 32764 )
+        self.sidekiq_tx_0 = sidekiq.sidekiq_tx(2, 0, sample_rate, atten_quart_db, center_freq, bandwidth, 1, 0, 0, 4, 8188 )
         self.blocks_throttle_0 = blocks.throttle(gr.sizeof_gr_complex*1, sample_rate,True)
         self.blocks_throttle_0.set_min_output_buffer(source_min_output_buffer)
         self.analog_sig_source_x_0 = analog.sig_source_c(sample_rate, analog.GR_COS_WAVE, tone_freq, 1, 0, 0)
