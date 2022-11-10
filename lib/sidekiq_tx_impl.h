@@ -22,8 +22,8 @@
 #ifndef INCLUDED_SIDEKIQ_SIDEKIQ_TX_IMPL_H
 #define INCLUDED_SIDEKIQ_SIDEKIQ_TX_IMPL_H
 
-#include <sidekiq/sidekiq_tx.h>
-#include <sidekiq/sidekiq_base.h>
+#include <gnuradio/sidekiq/sidekiq_tx.h>
+#include <gnuradio/sidekiq/sidekiq_base.h>
 #include <pthread.h>
 
 

@@ -1,9 +1,9 @@
 id: sidekiq_tx
-label: Sidekiq TX Sink
+label: New Sidekiq TX Sink
 category: '[sidekiq]'
 
 templates:
-  imports: import sidekiq
+  imports: from gnuradio import  sidekiq
   make: sidekiq.sidekiq_tx(${card}, ${handle}, ${sample_rate}, ${attenuation}, ${frequency}, ${bandwidth}, ${sync}, ${suppress_tune_transients}, ${dataflow_mode}, ${threads}, ${buffer_size} )
   callbacks: 
   - set_tx_sample_rate(${sample_rate})

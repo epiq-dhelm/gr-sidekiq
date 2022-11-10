@@ -22,7 +22,7 @@
 #ifndef INCLUDED_SIDEKIQ_SIDEKIQ_BASE_H
 #define INCLUDED_SIDEKIQ_SIDEKIQ_BASE_H
 
-#include <sidekiq/api.h>
+#include <gnuradio/sidekiq/api.h>
 #include <pmt/pmt.h>
 #include <sidekiq_api.h>
 #include "sidekiq_functions.h"

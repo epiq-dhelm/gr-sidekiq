@@ -22,7 +22,7 @@
 #ifndef INCLUDED_SIDEKIQ_SIDEKIQ_TX_H
 #define INCLUDED_SIDEKIQ_SIDEKIQ_TX_H
 
-#include <sidekiq/api.h>
+#include <gnuradio/sidekiq/api.h>
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-parameter"

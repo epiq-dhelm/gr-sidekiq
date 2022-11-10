@@ -25,7 +25,7 @@
 #endif
 
 #include <gnuradio/io_signature.h>
-#include <sidekiq/sidekiq_base.h>
+#include <gnuradio/sidekiq/sidekiq_base.h>
 #include <chrono>
 
 using namespace gr::sidekiq;
