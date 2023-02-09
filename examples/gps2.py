@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: GPL-3.0
 #
 # GNU Radio Python Flow Graph
-# Title: source_test
+# Title: gps2
 # GNU Radio version: 3.10.3.0
 
 from packaging.version import Version as StrictVersion
@@ -36,12 +36,12 @@ from gnuradio import sidekiq
 
 from gnuradio import qtgui
 
-class source_test(gr.top_block, Qt.QWidget):
+class gps2(gr.top_block, Qt.QWidget):
 
     def __init__(self):
-        gr.top_block.__init__(self, "source_test", catch_exceptions=True)
+        gr.top_block.__init__(self, "gps2", catch_exceptions=True)
         Qt.QWidget.__init__(self)
-        self.setWindowTitle("source_test")
+        self.setWindowTitle("gps2")
         qtgui.util.check_set_qss()
         try:
             self.setWindowIcon(Qt.QIcon.fromTheme('gnuradio-grc'))
@@ -59,7 +59,7 @@ class source_test(gr.top_block, Qt.QWidget):
         self.top_grid_layout = Qt.QGridLayout()
         self.top_layout.addLayout(self.top_grid_layout)
 
-        self.settings = Qt.QSettings("GNU Radio", "source_test")
+        self.settings = Qt.QSettings("GNU Radio", "gps2")
 
         try:
             if StrictVersion(Qt.qVersion()) < StrictVersion("5.0.0"):
@@ -87,13 +87,13 @@ class source_test(gr.top_block, Qt.QWidget):
         ##################################################
         # Connections
         ##################################################
-        self.msg_connect((self.sidekiq_nema_0, 'out-msg'), (self.blocks_message_debug_0, 'print'))
+        self.msg_connect((self.sidekiq_nema_0, 'out_txt'), (self.blocks_message_debug_0, 'print'))
         self.connect((self.blocks_throttle_0, 0), (self.blocks_file_sink_0, 0))
         self.connect((self.sidekiq_nema_0, 0), (self.blocks_throttle_0, 0))
 
 
     def closeEvent(self, event):
-        self.settings = Qt.QSettings("GNU Radio", "source_test")
+        self.settings = Qt.QSettings("GNU Radio", "gps2")
         self.settings.setValue("geometry", self.saveGeometry())
         self.stop()
         self.wait()
@@ -110,7 +110,7 @@ class source_test(gr.top_block, Qt.QWidget):
 
 
 
-def main(top_block_cls=source_test, options=None):
+def main(top_block_cls=gps2, options=None):
 
     if StrictVersion("4.5.0") <= StrictVersion(Qt.qVersion()) < StrictVersion("5.0.0"):
         style = gr.prefs().get_string('qtgui', 'style', 'raster')

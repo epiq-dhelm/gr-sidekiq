@@ -1,0 +1,176 @@
+options:
+  parameters:
+    author: ''
+    catch_exceptions: 'True'
+    category: '[GRC Hier Blocks]'
+    cmake_opt: ''
+    comment: ''
+    copyright: ''
+    description: ''
+    gen_cmake: 'On'
+    gen_linking: dynamic
+    generate_options: qt_gui
+    hier_block_src_path: '.:'
+    id: gps
+    max_nouts: '0'
+    output_language: python
+    placement: (0,0)
+    qt_qss_theme: ''
+    realtime_scheduling: ''
+    run: 'True'
+    run_command: '{python} -u {filename}'
+    run_options: prompt
+    sizing_mode: fixed
+    thread_safe_setters: ''
+    title: gps
+    window_size: (1000,1000)
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [8, 8]
+    rotation: 0
+    state: enabled
+
+blocks:
+- name: samp_rate
+  id: variable
+  parameters:
+    comment: ''
+    value: '32000'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [184, 12]
+    rotation: 0
+    state: enabled
+- name: blocks_file_sink_0
+  id: blocks_file_sink
+  parameters:
+    affinity: ''
+    alias: ''
+    append: 'False'
+    comment: ''
+    file: out.txt
+    type: byte
+    unbuffered: 'True'
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [960, 164.0]
+    rotation: 0
+    state: true
+- name: blocks_message_debug_0
+  id: blocks_message_debug
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    en_uvec: 'False'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [984, 264.0]
+    rotation: 0
+    state: true
+- name: blocks_throttle_0
+  id: blocks_throttle
+  parameters:
+    affinity: ''
+    alias: ''
+    comment: ''
+    ignoretag: 'True'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    samples_per_second: samp_rate
+    type: byte
+    vlen: '1'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [592, 188.0]
+    rotation: 0
+    state: true
+- name: epy_block_0
+  id: epy_block
+  parameters:
+    _source_code: "\"\"\"\nEmbedded Python Blocks:\n\nEach time this file is saved,\
+      \ GRC will instantiate the first class it finds\nto get ports and parameters\
+      \ of your block. The arguments to __init__  will\nbe the parameters. All of\
+      \ them are required to have default values!\n\"\"\"\n\nimport numpy as np\n\
+      from gnuradio import gr\nimport pmt\nimport io\n\nimport serial\nimport pynmea2\n\
+      \nser = serial.Serial('/dev/ttySKIQ_UART1', 9600, timeout=5.0)\nsio = io.TextIOWrapper(io.BufferedRWPair(ser,\
+      \ ser))\ndate = \"\"\noutput_value = \"\"\nutc_time = \"\"\n\nclass blk(gr.sync_block):\
+      \  # other base classes are basic_block, decim_block, interp_block\n    \"\"\
+      \"Embedded Python Block example - a simple multiply const\"\"\"\n     \n\n \
+      \   def __init__(self, port = '/dev/ttySKIQ_UART1'):  # only default arguments\
+      \ here\n        \"\"\"arguments to this function show up as parameters in GRC\"\
+      \"\"\n        gr.sync_block.__init__(\n            self,\n            name='NMEA\
+      \ output',   # will show up in GRC\n            in_sig = None,\n           \
+      \ out_sig = [np.byte])\n        self.message_port_register_out(pmt.intern('out_txt'))\n\
+      \n        # print (textboxValue)\n        # if an attribute with the same name\
+      \ as a parameter is found,\n        # a callback is registered (properties work,\
+      \ too).\n        self.port = port\n        \n        self.log=gr.logger(\"nameOfLogger\"\
+      )\n        self.log.set_level(\"DEBUG\")\n\n\n    def get_nmea(self, portname):\n\
+      \        global utc_time\n        try:\n            line = ser.readline()\n\
+      \            newline = str(line, 'utf-8', errors='ignore')\n            if \"\
+      GGA\" in newline:\n                data = pynmea2.parse(newline)\n\n       \
+      \         timestamp = data.timestamp                             \n        \
+      \        utc_time = str(timestamp)\n                print(\"utc_time\", utc_time)\n\
+      \                \n                lat, lon, alt = data.latitude, data.longitude,\
+      \ data.altitude\n                lat_dir, lon_dir, num_sats = data.lat_dir,\
+      \ data.lon_dir, data.num_sats\n                gps_qual = data.gps_qual\n  \
+      \              if gps_qual != 0:\n                    fix = \"yes\"\n      \
+      \          else:\n                    fix = \"no\"\n                print(\"\
+      fix(y/n): \", fix, \" Timestamp(UTC):\"  , timestamp,  \" Lat:\", \"{:4.6}\"\
+      .format(lat), lat_dir,  \" Long:\", \"{:4.6}\".format(lon), lon_dir,  \" Altitude:\"\
+      , alt,  \" Num Sats:\", num_sats)\n\n            if \"RMC\" in newline:\n  \
+      \              data = pynmea2.parse(newline)\n                date = data.datetime.date()\n\
+      \                print(\"date\",date)\n\n\n            if \"GSV\" in newline:\n\
+      \                data = pynmea2.parse(newline)\n                sats_in_view\
+      \ = data.num_sv_in_view\n                print(\"sats in view\",sats_in_view)\n\
+      \n            if \"VTG\" in newline:\n                data = pynmea2.parse(newline)\n\
+      \                horizontal_speed = data.spd_over_grnd_kmph\n              \
+      \  print(\"speed over ground Kmph\", horizontal_speed)\n\n\n\n        except\
+      \ serial.SerialException as e:\n            print('Device error: {}'.format(e))\n\
+      \            return\n\n        except pynmea2.ParseError as e:\n           print('Parse\
+      \ error: {}'.format(e))\n           return\n\n\n\n\n    def work(self, input_items,\
+      \ output_items):\n        global utc_time\n        \n        self.get_nmea(self.port)\n\
+      \        \n\n        # get length of string\n        _len = len(utc_time)\n\
+      \        if (_len > 0):\n            print(\"\\n timestamp \", utc_time)\n \
+      \           self.log.debug(\"in work {}\")\n            # terminate with LF\n\
+      \            utc_time += \"\\n\"\n            _len += 1\n            # store\
+      \ elements in output array\n            for x in range(_len):\n            \
+      \    output_items[0][x] = ord(utc_time[x])\n            \n            self.message_port_pub(pmt.intern('out_txt'),\
+      \ pmt.intern(utc_time))\n            utc_time = \"\"\n            return (_len)\n\
+      \        else:\n            return (0)\n        \n"
+    affinity: ''
+    alias: ''
+    comment: ''
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    port: '''/dev/ttySKIQ_UART1'''
+  states:
+    _io_cache: ('NMEA output', 'blk', [('port', "'/dev/ttySKIQ_UART1'")], [], [('0',
+      'byte', 1), ('out_txt', 'message', 1)], 'Embedded Python Block example - a simple
+      multiply const', ['port'])
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [184, 240.0]
+    rotation: 0
+    state: true
+
+connections:
+- [blocks_throttle_0, '0', blocks_file_sink_0, '0']
+- [epy_block_0, '0', blocks_throttle_0, '0']
+- [epy_block_0, out_txt, blocks_message_debug_0, print]
+
+metadata:
+  file_format: 1
+  grc_version: 3.10.3.0
