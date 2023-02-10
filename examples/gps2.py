@@ -77,7 +77,7 @@ class gps2(gr.top_block, Qt.QWidget):
         ##################################################
         # Blocks
         ##################################################
-        self.sidekiq_nema_0 = sidekiq.nema('/dev/ttySKIQ_UART1')
+        self.sidekiq_nmea_0 = sidekiq.nmea('/dev/ttySKIQ_UART1')
         self.blocks_throttle_0 = blocks.throttle(gr.sizeof_char*1, samp_rate,True)
         self.blocks_message_debug_0 = blocks.message_debug(False)
         self.blocks_file_sink_0 = blocks.file_sink(gr.sizeof_char*1, 'out.txt', False)
@@ -87,9 +87,9 @@ class gps2(gr.top_block, Qt.QWidget):
         ##################################################
         # Connections
         ##################################################
-        self.msg_connect((self.sidekiq_nema_0, 'out_txt'), (self.blocks_message_debug_0, 'print'))
+        self.msg_connect((self.sidekiq_nmea_0, 'out_txt'), (self.blocks_message_debug_0, 'print'))
         self.connect((self.blocks_throttle_0, 0), (self.blocks_file_sink_0, 0))
-        self.connect((self.sidekiq_nema_0, 0), (self.blocks_throttle_0, 0))
+        self.connect((self.sidekiq_nmea_0, 0), (self.blocks_throttle_0, 0))
 
 
     def closeEvent(self, event):

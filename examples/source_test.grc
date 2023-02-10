@@ -332,7 +332,7 @@ blocks:
     bandwidth: bandwidth
     cal_mode: '1'
     cal_type: '2'
-    card: '0'
+    card: '2'
     comment: ''
     frequency: frequency
     gain_index: gain_index

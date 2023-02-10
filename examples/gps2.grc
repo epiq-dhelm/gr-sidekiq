@@ -96,8 +96,8 @@ blocks:
     coordinate: [544, 444.0]
     rotation: 0
     state: true
-- name: sidekiq_nema_0
-  id: sidekiq_nema
+- name: sidekiq_nmea_0
+  id: sidekiq_nmea
   parameters:
     affinity: ''
     alias: ''
@@ -109,14 +109,14 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [200, 264.0]
+    coordinate: [192, 280.0]
     rotation: 0
     state: true
 
 connections:
 - [blocks_throttle_0, '0', blocks_file_sink_0, '0']
-- [sidekiq_nema_0, '0', blocks_throttle_0, '0']
-- [sidekiq_nema_0, out_txt, blocks_message_debug_0, print]
+- [sidekiq_nmea_0, '0', blocks_throttle_0, '0']
+- [sidekiq_nmea_0, out_txt, blocks_message_debug_0, print]
 
 metadata:
   file_format: 1

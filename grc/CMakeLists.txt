@@ -9,5 +9,5 @@
 install(FILES
     sidekiq_sidekiq_tx.block.yml
     sidekiq_sidekiq_rx.block.yml
-    sidekiq_nema.block.yml DESTINATION share/gnuradio/grc/blocks
+    sidekiq_nmea.block.yml DESTINATION share/gnuradio/grc/blocks
 )

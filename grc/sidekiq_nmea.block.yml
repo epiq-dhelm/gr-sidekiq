@@ -1,10 +1,10 @@
-id: sidekiq_nema
-label: NMEA Streaming
+id: sidekiq_nmea
+label: New NMEA Streaming
 category: '[sidekiq]'
 
 templates:
   imports: from gnuradio import sidekiq
-  make: sidekiq.nema(${port})
+  make: sidekiq.nmea(${port})
 
 #  Make one 'parameters' list entry for every parameter you want settable from the GUI.
 #     Keys include:
