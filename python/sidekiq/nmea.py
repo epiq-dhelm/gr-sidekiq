@@ -23,26 +23,22 @@ output_value = ""
 utc_time = ""
 fix = ""
 
-class nmea(gr.sync_block):  # other base classes are basic_block, decim_block, interp_block
-    """Embedded Python Block example - a simple multiply const"""
-
+class nmea(gr.basic_block):  # other base classes are basic_block, decim_block, interp_block
 
     def __init__(self, port = '/dev/ttySKIQ_UART1'):  # only default arguments here
         """arguments to this function show up as parameters in GRC"""
-        gr.sync_block.__init__(
+        gr.basic_block.__init__(
             self,
             name='nmea',   # will show up in GRC
             in_sig = None,
-            out_sig = [np.byte])
+            out_sig = None)
+
         self.message_port_register_out(pmt.intern('out_txt'))
 
         # print (textboxValue)
         # if an attribute with the same name as a parameter is found,
         # a callback is registered (properties work, too).
         self.port = port
-
-        self.log=gr.logger("nameOfLogger")
-        self.log.set_level("DEBUG")
 
 
     def get_nmea(self, portname):
@@ -82,8 +78,6 @@ class nmea(gr.sync_block):  # other base classes are basic_block, decim_block, i
                 horizontal_speed = data.spd_over_grnd_kmph
                 print("speed over ground Kmph", horizontal_speed)
 
-
-
         except serial.SerialException as e:
             print('Device error: {}'.format(e))
             return
@@ -92,26 +86,18 @@ class nmea(gr.sync_block):  # other base classes are basic_block, decim_block, i
            print('Parse error: {}'.format(e))
            return
 
-
-
-
-    def work(self, input_items, output_items):
+    def work(self):
         global utc_time, fix
 
         self.get_nmea(self.port)
-
 
         # get length of string
         _len = len(utc_time)
         if (_len > 0):
             print("\n timestamp ", utc_time)
-            self.log.debug("in work {}")
             # terminate with LF
             utc_time += "\n"
             _len += 1
-            # store elements in output array
-            for x in range(_len):
-                output_items[0][x] = ord(utc_time[x])
 
             key1 = pmt.intern("utc_time")
             value1 = pmt.intern(utc_time)
@@ -123,10 +109,21 @@ class nmea(gr.sync_block):  # other base classes are basic_block, decim_block, i
             msg = pmt.dict_add(msg, key1, value1)
             msg = pmt.dict_add(msg, key2, value2)
 
-
             self.message_port_pub(pmt.intern('out_txt'), msg)
+            print("\n port_pub ", utc_time)
             utc_time = ""
             return (_len)
         else:
             return (0)
 
+    def start(self):
+        print("in start")
+
+        while 1:
+            self.work()
+
+    def stop(self):
+        print("in stop")
+
+    if __name__ == '__main__':
+        print("in main")
