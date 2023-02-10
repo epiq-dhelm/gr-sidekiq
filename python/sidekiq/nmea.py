@@ -15,6 +15,8 @@ import io
 
 import serial
 import pynmea2
+import time
+import threading
 
 ser = serial.Serial('/dev/ttySKIQ_UART1', 9600, timeout=5.0)
 sio = io.TextIOWrapper(io.BufferedRWPair(ser, ser))
@@ -22,18 +24,37 @@ date = ""
 output_value = ""
 utc_time = ""
 fix = ""
+running = False
+
+class thread(threading.Thread):
+    def __init__(self, thread_name, thread_ID):
+        threading.Thread.__init__(self)
+        self.thread_name = thread_name
+        self.thread_ID = thread_ID
+
+        # helper function to execute the threads
+
+    def run(self):
+        global running, blkobject
+        while running:
+            blkobject.do_work()
 
 class nmea(gr.basic_block):  # other base classes are basic_block, decim_block, interp_block
+    thread_id = thread("GFG", 1000)
 
     def __init__(self, port = '/dev/ttySKIQ_UART1'):  # only default arguments here
+        global blkobject
+        
         """arguments to this function show up as parameters in GRC"""
         gr.basic_block.__init__(
             self,
             name='nmea',   # will show up in GRC
             in_sig = None,
             out_sig = None)
+        self.d_port = pmt.mp("out_txt")
+        self.message_port_register_out(self.d_port)
 
-        self.message_port_register_out(pmt.intern('out_txt'))
+        blkobject = self
 
         # print (textboxValue)
         # if an attribute with the same name as a parameter is found,
@@ -86,7 +107,7 @@ class nmea(gr.basic_block):  # other base classes are basic_block, decim_block, 
            print('Parse error: {}'.format(e))
            return
 
-    def work(self):
+    def do_work(self):
         global utc_time, fix
 
         self.get_nmea(self.port)
@@ -109,21 +130,51 @@ class nmea(gr.basic_block):  # other base classes are basic_block, decim_block, 
             msg = pmt.dict_add(msg, key1, value1)
             msg = pmt.dict_add(msg, key2, value2)
 
-            self.message_port_pub(pmt.intern('out_txt'), msg)
+            self.message_port_pub(self.d_port, msg)
             print("\n port_pub ", utc_time)
             utc_time = ""
             return (_len)
         else:
             return (0)
 
-    def start(self):
-        print("in start")
+    def work(self):
+        print("in_work")
 
         while 1:
-            self.work()
+            print("running")
+            if (running):
+                self.do_work()
+        return 
+
+    def general_work(self):
+        print("in general_work")
+
+        return 
+
+    def start(self):
+        global thread1, running
+
+        print("in start")
+
+        running = True
+        nmea.thread_id.start()
+        return
 
     def stop(self):
-        print("in stop")
+        global thread1, running
 
-    if __name__ == '__main__':
-        print("in main")
+        print("in stop")
+        running = False
+        nmea.thread.join()
+
+        return
+
+        
+
+
+print("main") 
+
+
+print("Exit")    	
+
+

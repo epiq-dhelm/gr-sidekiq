@@ -30,7 +30,7 @@ from PyQt5 import Qt
 from argparse import ArgumentParser
 from gnuradio.eng_arg import eng_float, intx
 from gnuradio import eng_notation
-from gnuradio import sidekiq
+import test_epy_block_0 as epy_block_0  # embedded python block
 
 
 
@@ -77,14 +77,14 @@ class test(gr.top_block, Qt.QWidget):
         ##################################################
         # Blocks
         ##################################################
-        self.sidekiq_nmea_0 = sidekiq.nmea('/dev/ttySKIQ_UART1')
+        self.epy_block_0 = epy_block_0.blk(example_param=1.0)
         self.blocks_message_debug_0 = blocks.message_debug(True)
 
 
         ##################################################
         # Connections
         ##################################################
-        self.msg_connect((self.sidekiq_nmea_0, 'out_txt'), (self.blocks_message_debug_0, 'print'))
+        self.msg_connect((self.epy_block_0, 'msg_out'), (self.blocks_message_debug_0, 'print'))
 
 
     def closeEvent(self, event):
