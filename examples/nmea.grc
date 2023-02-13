@@ -56,7 +56,7 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [672, 272.0]
+    coordinate: [792, 312.0]
     rotation: 0
     state: true
 - name: sidekiq_nmea_0
