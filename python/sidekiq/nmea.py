@@ -24,6 +24,14 @@ date = ""
 output_value = ""
 utc_time = ""
 fix = ""
+lat = ""
+lat_dir = ""
+lon = ""
+lon_dir = ""
+altitude = ""
+num_sats = ""
+date = ""
+
 running = False
 
 class thread(threading.Thread):
@@ -45,7 +53,6 @@ class nmea(gr.basic_block):  # other base classes are basic_block, decim_block, 
     def __init__(self, port = '/dev/ttySKIQ_UART1'):  # only default arguments here
         global blkobject
         
-        """arguments to this function show up as parameters in GRC"""
         gr.basic_block.__init__(
             self,
             name='nmea',   # will show up in GRC
@@ -63,32 +70,40 @@ class nmea(gr.basic_block):  # other base classes are basic_block, decim_block, 
 
 
     def get_nmea(self, portname):
-        global utc_time, fix
+        global utc_time, fix, lat, lat_dir, lon, lon_dir, altitude, num_sats, date 
         try:
             line = ser.readline()
             newline = str(line, 'utf-8', errors='ignore')
             if "GGA" in newline:
                 data = pynmea2.parse(newline)
 
-                timestamp = data.timestamp
-                utc_time = str(timestamp)
-                print("utc_time", utc_time)
+                utc_time = str(data.timestamp)
 
-                lat, lon, alt = data.latitude, data.longitude, data.altitude
-                lat_dir, lon_dir, num_sats = data.lat_dir, data.lon_dir, data.num_sats
                 gps_qual = data.gps_qual
                 if gps_qual != 0:
                     fix = "yes"
                 else:
                     fix = "no"
-                print("fix(y/n): ", fix, " Timestamp(UTC):"  , timestamp,  " Lat:", "{:4.6}".format(lat), lat_dir,  " Long:", "{:4.6}".format(lon), lon_dir,  " Altitude:", alt,  " Num Sats:", num_sats)
+
+                lat = "{:4.6}".format(data.latitude)
+                lat_dir = str(data.lat_dir)
+                lon = "{:4.6}".format(data.longitude)
+                lon_dir = str(data.lon_dir)
+                altitude = str(data.altitude)
+                num_sats = str(data.num_sats)
+
+                print("fix(y/n): ", fix, " Timestamp(UTC):"  , utc_time,  " Lat:", "{:4.6}".format(lat), 
+                        lat_dir,  " Long:", "{:4.6}".format(lon), lon_dir,  " Altitude:", altitude,  " Num Sats:", num_sats)
 
             if "RMC" in newline:
                 data = pynmea2.parse(newline)
-                date = data.datetime.date()
-                print("date",date)
-
-
+                date = str(data.datetime.date())
+                timestamp =  data.datetime.time()
+                utc_time = str(timestamp) 
+            
+                print("date", date, "time", utc_time)
+            
+            """
             if "GSV" in newline:
                 data = pynmea2.parse(newline)
                 sats_in_view = data.num_sv_in_view
@@ -98,6 +113,7 @@ class nmea(gr.basic_block):  # other base classes are basic_block, decim_block, 
                 data = pynmea2.parse(newline)
                 horizontal_speed = data.spd_over_grnd_kmph
                 print("speed over ground Kmph", horizontal_speed)
+            """
 
         except serial.SerialException as e:
             print('Device error: {}'.format(e))
@@ -108,48 +124,86 @@ class nmea(gr.basic_block):  # other base classes are basic_block, decim_block, 
            return
 
     def do_work(self):
-        global utc_time, fix
+        global utc_time, fix, lat, lat_dir, lon, lon_dir, altitude, num_sats, date
 
         self.get_nmea(self.port)
+        msg = pmt.make_dict()
+        valid_output = False
 
-        # get length of string
-        _len = len(utc_time)
-        if (_len > 0):
-            print("\n timestamp ", utc_time)
-            # terminate with LF
-            utc_time += "\n"
-            _len += 1
 
-            key1 = pmt.intern("utc_time")
-            value1 = pmt.intern(utc_time)
 
-            key2 = pmt.intern("lock")
-            value2 = pmt.intern(fix)
 
-            msg = pmt.make_dict()
-            msg = pmt.dict_add(msg, key1, value1)
-            msg = pmt.dict_add(msg, key2, value2)
 
-            self.message_port_pub(self.d_port, msg)
-            print("\n port_pub ", utc_time)
+
+
+
+        if (num_sats != ""):
+            key = pmt.intern("num_sats")
+            value = pmt.intern(num_sats)
+            msg = pmt.dict_add(msg, key, value)
+            num_sats = ""
+            valid_output = True
+
+        if (altitude != ""):
+            key = pmt.intern("altitude")
+            value = pmt.intern(altitude)
+            msg = pmt.dict_add(msg, key, value)
+            altitude = ""
+            valid_output = True
+
+        if (lon_dir != ""):
+            key = pmt.intern("lon_dir")
+            value = pmt.intern(lon_dir)
+            msg = pmt.dict_add(msg, key, value)
+            lon_dir = ""
+            valid_output = True
+
+        if (lon != ""):
+            key = pmt.intern("lon")
+            value = pmt.intern(lon)
+            msg = pmt.dict_add(msg, key, value)
+            lon = ""
+            valid_output = True
+
+        if (lat_dir != ""):
+            key = pmt.intern("lat_dir")
+            value = pmt.intern(lat_dir)
+            msg = pmt.dict_add(msg, key, value)
+            lat_dir = ""
+            valid_output = True
+
+        if (lat != ""):
+            key = pmt.intern("lat")
+            value = pmt.intern(lat)
+            msg = pmt.dict_add(msg, key, value)
+            lat = ""
+            valid_output = True
+
+        if (fix != ""):
+            key = pmt.intern("fix")
+            value = pmt.intern(fix)
+            msg = pmt.dict_add(msg, key, value)
+            fix = ""
+            valid_output = True
+
+        if (utc_time != ""):
+            key = pmt.intern("utc_time")
+            value = pmt.intern(utc_time)
+            msg = pmt.dict_add(msg, key, value)
             utc_time = ""
-            return (_len)
-        else:
-            return (0)
+            valid_output = True
 
-    def work(self):
-        print("in_work")
+        if (date != ""):
+            key = pmt.intern("date")
+            value = pmt.intern(date)
+            msg = pmt.dict_add(msg, key, value)
+            date = ""
+            valid_output = True
 
-        while 1:
-            print("running")
-            if (running):
-                self.do_work()
-        return 
+        if valid_output == True:
+            self.message_port_pub(self.d_port, msg)
 
-    def general_work(self):
-        print("in general_work")
-
-        return 
+        return
 
     def start(self):
         global thread1, running
