@@ -1,11 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 #
-# Copyright 2023 gr-sidekiq author.
+# Copyright 2023 gr-sidekiq author dph.
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
+# This module will open the UART port for NMEA traffic from the GPS module.
+# This gives the time, date, fix, lat, long, and num_sats info.
+# It sends it to other modules via messages.
+# It has no streams, only one output message port.
 
 
 import numpy as np
@@ -18,8 +22,7 @@ import pynmea2
 import time
 import threading
 
-ser = serial.Serial('/dev/ttySKIQ_UART1', 9600, timeout=5.0)
-sio = io.TextIOWrapper(io.BufferedRWPair(ser, ser))
+# Information stored from NMEA stream
 date = ""
 output_value = ""
 utc_time = ""
@@ -34,45 +37,68 @@ date = ""
 
 running = False
 
-class thread(threading.Thread):
+# The nmea thread is created by gnuradio.  In the basic block, work() is not called by gnuradio
+# so start() is the only function called by gnuradio.  Thus we cannot sit in a hard loop in start, 
+# so we are doing the work from a separate thread.  That thread is created in start() and killed in stop()
+
+
+class get_info_thread(threading.Thread):
     def __init__(self, thread_name, thread_ID):
         threading.Thread.__init__(self)
         self.thread_name = thread_name
         self.thread_ID = thread_ID
 
-        # helper function to execute the threads
-
+    # sit in a hard loop getting the NEMA stream
     def run(self):
         global running, blkobject
         while running:
             blkobject.do_work()
 
+# This is the class created by gnuradio, the start() and stop() method are called by gnuradio
+
 class nmea(gr.basic_block):  # other base classes are basic_block, decim_block, interp_block
-    thread_id = thread("GFG", 1000)
+    thread_id = get_info_thread("GFG", 1000)
 
     def __init__(self, port = '/dev/ttySKIQ_UART1'):  # only default arguments here
-        global blkobject
+        global blkobject, ser
         
         gr.basic_block.__init__(
             self,
             name='nmea',   # will show up in GRC
             in_sig = None,
             out_sig = None)
-        self.d_port = pmt.mp("out_txt")
+        self.d_port = pmt.mp("out_msg")
         self.message_port_register_out(self.d_port)
+        self.my_log = gr.logger(self.alias())
+        self.my_log.set_level("trace")
+        self.my_log.debug(f"in constructor")
 
         blkobject = self
 
-        # print (textboxValue)
         # if an attribute with the same name as a parameter is found,
         # a callback is registered (properties work, too).
         self.port = port
 
+        self.my_log.debug(f"Setting uart port to {port}")
+
+        try:
+            self.ser = serial.Serial(port, 9600, timeout=5.0)
+
+        except serial.SerialException as e:
+            print('Device error: {}'.format(e))
+            exit()
+
+        except pynmea2.ParseError as e:
+           print('Parse error: {}'.format(e))
+           exit()
+
 
     def get_nmea(self, portname):
         global utc_time, fix, lat, lat_dir, lon, lon_dir, altitude, num_sats, date 
+        self.my_log.debug(f"get_nmea")
+
         try:
-            line = ser.readline()
+            line = self.ser.readline()
             newline = str(line, 'utf-8', errors='ignore')
             if "GGA" in newline:
                 data = pynmea2.parse(newline)
@@ -91,9 +117,10 @@ class nmea(gr.basic_block):  # other base classes are basic_block, decim_block, 
                 lon_dir = str(data.lon_dir)
                 altitude = str(data.altitude)
                 num_sats = str(data.num_sats)
+                
+                self.my_log.info(f"utc_time {utc_time}, fix {fix}, Lat {lat}, Lat_dir {lat_dir}," 
+                        "Long {lon}, Lon_dir {lon_dir}, Altitude {altitude}, Num Sats {num_sats}" )
 
-                print("fix(y/n): ", fix, " Timestamp(UTC):"  , utc_time,  " Lat:", "{:4.6}".format(lat), 
-                        lat_dir,  " Long:", "{:4.6}".format(lon), lon_dir,  " Altitude:", altitude,  " Num Sats:", num_sats)
 
             if "RMC" in newline:
                 data = pynmea2.parse(newline)
@@ -101,7 +128,7 @@ class nmea(gr.basic_block):  # other base classes are basic_block, decim_block, 
                 timestamp =  data.datetime.time()
                 utc_time = str(timestamp) 
             
-                print("date", date, "time", utc_time)
+                self.my_log.info(f"date {date}, time {utc_time}")
             
             """
             if "GSV" in newline:
@@ -117,25 +144,19 @@ class nmea(gr.basic_block):  # other base classes are basic_block, decim_block, 
 
         except serial.SerialException as e:
             print('Device error: {}'.format(e))
-            return
+            exit()
 
         except pynmea2.ParseError as e:
-           print('Parse error: {}'.format(e))
-           return
+            print('Parse error: {}'.format(e))
+            exit()
 
     def do_work(self):
         global utc_time, fix, lat, lat_dir, lon, lon_dir, altitude, num_sats, date
+        self.my_log.debug("do_work")
 
         self.get_nmea(self.port)
         msg = pmt.make_dict()
         valid_output = False
-
-
-
-
-
-
-
 
         if (num_sats != ""):
             key = pmt.intern("num_sats")
@@ -207,28 +228,24 @@ class nmea(gr.basic_block):  # other base classes are basic_block, decim_block, 
 
     def start(self):
         global thread1, running
+        self.my_log.debug("start")
 
-        print("in start")
 
         running = True
         nmea.thread_id.start()
         return
 
     def stop(self):
-        global thread1, running
+        global thread_id, running
 
-        print("in stop")
+        self.my_log.debug("stop")
         running = False
-        nmea.thread.join()
+        nmea.thread_id.join()
 
         return
 
         
 
 
-print("main") 
-
-
-print("Exit")    	
 
 

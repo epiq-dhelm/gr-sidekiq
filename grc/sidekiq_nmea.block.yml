@@ -38,7 +38,7 @@ inputs:
 #  optional: ...
 
 outputs:
-- label: out_txt
+- label: out_msg
   domain: message
   dtype: string 
 #  vlen: ...

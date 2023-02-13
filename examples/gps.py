@@ -84,7 +84,7 @@ class gps(gr.top_block, Qt.QWidget):
         ##################################################
         # Connections
         ##################################################
-        self.msg_connect((self.sidekiq_nmea_0, 'out_txt'), (self.blocks_message_debug_0, 'print'))
+        self.msg_connect((self.sidekiq_nmea_0, 'out_msg'), (self.blocks_message_debug_0, 'print'))
 
 
     def closeEvent(self, event):

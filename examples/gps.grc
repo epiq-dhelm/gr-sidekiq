@@ -72,12 +72,12 @@ blocks:
     bus_sink: false
     bus_source: false
     bus_structure: null
-    coordinate: [192, 280.0]
+    coordinate: [368, 312.0]
     rotation: 0
     state: true
 
 connections:
-- [sidekiq_nmea_0, out_txt, blocks_message_debug_0, print]
+- [sidekiq_nmea_0, out_msg, blocks_message_debug_0, print]
 
 metadata:
   file_format: 1
