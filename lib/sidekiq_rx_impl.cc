@@ -1001,9 +1001,7 @@ int sidekiq_rx_impl::work(int noutput_items,
     uint32_t samples_to_write[MAX_PORT]{};
     uint32_t portno{};
     bool looping = true; 
-    Clock::time_point this_time;
 
-    this_time = Clock::now();
     gr_complex *out[MAX_PORT] = {NULL, NULL};
     gr_complex *curr_out_ptr[MAX_PORT] = {NULL, NULL} ;
 
@@ -1022,7 +1020,7 @@ int sidekiq_rx_impl::work(int noutput_items,
     first_block[1]  = true;
 
     /* We told gnuradio to not call us with a buffer size smaller than our block, so error out. */
-    if (noutput_items < DATA_MAX_BUFFER_SIZE)
+    if ((noutput_items % DATA_MAX_BUFFER_SIZE) != 0)
     {
         d_logger->error( "Error : invalid noutput_items {}", noutput_items);
         throw std::runtime_error("Failure: invalid noutput items");
@@ -1038,16 +1036,8 @@ int sidekiq_rx_impl::work(int noutput_items,
             d_logger->info("Overruns detected: {}", overrun_counter);
         }
 
-#ifdef DEBUG
-        milliseconds ms = std::chrono::duration_cast<milliseconds>(this_time - last_time);
-        last_time = this_time;
-
-        d_logger->debug("delta time {}, noutput_items {}, nitems_written {}, last_update {} update_rate {}, work calls {}",
-               ms.count(), noutput_items, nitems_written(0), last_status_update_sample, status_update_rate_in_samples, debug_ctr );
-#else
-        d_logger->debug("noutput_items {}, nitems_written {}, last_update {}",
-               noutput_items, nitems_written(0), last_status_update_sample);
-#endif
+//        d_logger->debug("noutput_items {}, nitems_written {}, last_update {}",
+//               noutput_items, nitems_written(0), last_status_update_sample);
 
         last_status_update_sample = nitems_written(0);
     }
@@ -1075,33 +1065,6 @@ int sidekiq_rx_impl::work(int noutput_items,
                /* there are fewer items left in the block than we need to write */
                 samples_to_write[portno] = curr_block_samples_left[portno];
             }
-//#define DEBUG
-#ifdef DEBUG
-            if (debug_ctr < 2)
-            {
-                printf("portno %d, overrun ctr %lu, samples_left %d, samples_written %d, samples_to_write %u, noutput_items %d\n",
-                        portno, overrun_counter, curr_block_samples_left[portno], samples_written[portno], 
-                        samples_to_write[portno], noutput_items);
-
-#ifdef POO
-                if (samples_written[portno] == 1018)
-                {
-                    printf("0x%08X ", (1143 * 4));
-                    for (int i=125; i < 141; i++)
-                    {
-                        printf("0x%04X ", curr_block_ptr[portno][i * IQ_SHORT_COUNT + 1]);
-                        printf("0x%04X ", curr_block_ptr[portno][i * IQ_SHORT_COUNT]);
-                        if (i%4 == 0)
-                        {
-                            printf("\n");
-                        }
-                    }
-                    printf("\n");
-                }
-#endif
-                fflush(stdout);
-            }
-#endif
 
             /* convert and write the samples */
             volk_16i_s32f_convert_32f_u(
@@ -1109,8 +1072,6 @@ int sidekiq_rx_impl::work(int noutput_items,
                   (const int16_t *) curr_block_ptr[portno],
                   adc_scaling,
                   (samples_to_write[portno] * IQ_SHORT_COUNT ));
-
-
 
             /* increment all the pointers and counters */
             samples_written[portno] += samples_to_write[portno];
@@ -1152,17 +1113,6 @@ int sidekiq_rx_impl::work(int noutput_items,
         curr_block_ptr[portno] = NULL;
     }
     
-#ifdef DEBUG
-    if (debug_ctr < 30)
-    {
-        milliseconds ms = std::chrono::duration_cast<milliseconds>(this_time - last_time);
-        d_logger->debug("dual_port {}, items written {}, noutput_items {}, samples_written {}", 
-                dual_port, nitems_written(0), noutput_items, samples_written[portno]);
-        std::cout << ms.count() << "ms\n";
-        last_time = this_time;
-    }
-#endif
-
 
     debug_ctr++;
 
