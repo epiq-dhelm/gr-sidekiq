@@ -1124,16 +1124,19 @@ int sidekiq_rx_impl::work(int noutput_items,
                 add_item_tag(portno, tag_index[portno], 
                                 curr_rf_block_tag.key, curr_rf_block_tag.value);
 
-                /* update the absolute index into the stream */
-                tag_index[portno] = tag_index[portno] + samples_written[portno];
-
-                if (debug_ctr < 10)
+#ifdef DEBUG
+                if (debug_ctr < 5)
                 {
-                    d_logger->debug("add item: ctr {}, portno {}, samples_written {}, noutput_items {}, buffer_size {}", 
+                    d_logger->info("add item: ctr {}, portno {}, samples_written {}, noutput_items {}, buffer_size {}", 
                             debug_ctr, portno, samples_written[portno], noutput_items, DATA_MAX_BUFFER_SIZE);
-                    d_logger->debug("key {}, value {}, abs_tag_index {}",
+                    d_logger->info("abs_tag_index {}, key {}, value {}",
                             tag_index[portno], curr_rf_block_tag.key, curr_rf_block_tag.value);
                 }
+#endif
+
+                /* update the absolute index into the stream */
+                tag_index[portno] = tag_index[portno] + DATA_MAX_BUFFER_SIZE;
+
             }
         }
 
