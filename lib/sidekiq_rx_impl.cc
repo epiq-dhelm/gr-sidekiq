@@ -147,6 +147,7 @@ sidekiq_rx_impl::sidekiq_rx_impl(
         this->hdl2 = skiq_rx_hdl_end;
         this->dual_port = false;
     }
+    d_logger->info("hdl1 {}, hdl2 {}", this->hdl1, this->hdl2);
 
     /* initialize libsidekiq */
     status = skiq_init(skiq_xport_type_pcie, skiq_xport_init_level_full, &card, 1);
@@ -1100,7 +1101,6 @@ int sidekiq_rx_impl::work(int noutput_items,
 
             }
         }
-
 
         /* determine if we are done with this work() call */
         looping = determine_if_done(samples_written, noutput_items, &portno);
