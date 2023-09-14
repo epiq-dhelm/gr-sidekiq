@@ -64,20 +64,20 @@ telemetry_impl::telemetry_impl(
 
     message_port_register_in(pmt::mp("temp"));
     set_msg_handler(pmt::mp("temp"),
-                    [this](const pmt::pmt_t& msg) { this->temp(msg); });
+                    [this](const pmt::pmt_t& msg) { temp(msg); });
       
     message_port_register_in(pmt::mp("imu"));
     set_msg_handler(pmt::mp("imu"),
-            [this](const pmt::pmt_t& msg) { this->imu(msg); });
+            [this](const pmt::pmt_t& msg) { imu(msg); });
 
 
     
 }
-void telemetry::temp(const pmt::pmt_t& msg)
+void temp(const pmt::pmt_t& msg)
 {
     printf("in temp\n");
 }
-void telemetry::imu(const pmt::pmt_t& msg)
+void imu(const pmt::pmt_t& msg)
 {
     printf("in imu\n");
 }
