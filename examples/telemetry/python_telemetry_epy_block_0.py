@@ -45,15 +45,25 @@ class blk(gr.sync_block):  # other base classes are basic_block, decim_block, in
        
 
     def handle_temp_msg(self, msg):
-        print("in handle_temp_msg")
-        temp = ctypes.c_int()
+        temp = ctypes.c_int(0)
 
         skiq.get_temp(ctypes.byref(temp))
 
-        print(temp.value)
+        print("\nTemp in Celsius: ", temp.value, "\n")
 
     def handle_imu_msg(self, msg):
-        print("in handle_imu_msg")
+        acc_x = ctypes.c_int(0)
+        acc_y = ctypes.c_int(0)
+        acc_z = ctypes.c_int(0)
+        gyro_x = ctypes.c_int(0)
+        gyro_y = ctypes.c_int(0)
+        gyro_z = ctypes.c_int(0)
+
+        skiq.get_imu(ctypes.byref(acc_x), ctypes.byref(acc_y), ctypes.byref(acc_z), 
+                      ctypes.byref(gyro_x), ctypes.byref(gyro_x), ctypes.byref(gyro_x) )
+
+        print("\nIMU: AX: ", acc_x.value, "AY: ", acc_y.value, "AZ: ",  acc_z.value, "GX: ", gyro_x.value , "GY: ",  gyro_y.value, "GZ: ",  gyro_z.value, "\n") 
+
 
     def work(self, input_items, output_items):
         if self.first == True:
