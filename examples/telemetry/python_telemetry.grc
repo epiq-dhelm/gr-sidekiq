@@ -37,7 +37,7 @@ blocks:
   id: variable
   parameters:
     comment: ''
-    value: '32000'
+    value: '20000000'
   states:
     bus_sink: false
     bus_source: false
@@ -45,28 +45,6 @@ blocks:
     coordinate: [184, 12]
     rotation: 0
     state: enabled
-- name: analog_sig_source_x_0
-  id: analog_sig_source_x
-  parameters:
-    affinity: ''
-    alias: ''
-    amp: '1'
-    comment: ''
-    freq: '1000'
-    maxoutbuf: '0'
-    minoutbuf: '0'
-    offset: '0'
-    phase: '0'
-    samp_rate: samp_rate
-    type: complex
-    waveform: analog.GR_COS_WAVE
-  states:
-    bus_sink: false
-    bus_source: false
-    bus_structure: null
-    coordinate: [480, 28.0]
-    rotation: 0
-    state: true
 - name: blocks_message_strobe_0
   id: blocks_message_strobe
   parameters:
@@ -76,7 +54,7 @@ blocks:
     maxoutbuf: '0'
     minoutbuf: '0'
     msg: pmt.intern("temp")
-    period: '1000'
+    period: '2000'
   states:
     bus_sink: false
     bus_source: false
@@ -125,11 +103,17 @@ blocks:
       \n        self.selectPortName = 'imu'\n        self.message_port_register_in(pmt.intern(self.selectPortName))\n\
       \        self.set_msg_handler(pmt.intern(self.selectPortName), self.handle_imu_msg)\n\
       \        self.first = True\n       \n\n    def handle_temp_msg(self, msg):\n\
-      \        print(\"in handle_temp_msg\")\n        temp = ctypes.c_int()\n\n  \
-      \      skiq.get_temp(ctypes.byref(temp))\n\n        print(temp.value)\n\n  \
-      \  def handle_imu_msg(self, msg):\n        print(\"in handle_imu_msg\")\n\n\
-      \    def work(self, input_items, output_items):\n        if self.first == True:\n\
-      \            c_card = ctypes.c_byte(self.card)\n            skiq.init_card(c_card)\n\
+      \        temp = ctypes.c_int(0)\n\n        skiq.get_temp(ctypes.byref(temp))\n\
+      \n        print(\"\\nTemp in Celsius: \", temp.value, \"\\n\")\n\n    def handle_imu_msg(self,\
+      \ msg):\n        acc_x = ctypes.c_int(0)\n        acc_y = ctypes.c_int(0)\n\
+      \        acc_z = ctypes.c_int(0)\n        gyro_x = ctypes.c_int(0)\n       \
+      \ gyro_y = ctypes.c_int(0)\n        gyro_z = ctypes.c_int(0)\n\n        skiq.get_imu(ctypes.byref(acc_x),\
+      \ ctypes.byref(acc_y), ctypes.byref(acc_z), \n                      ctypes.byref(gyro_x),\
+      \ ctypes.byref(gyro_x), ctypes.byref(gyro_x) )\n\n        print(\"\\nIMU: AX:\
+      \ \", acc_x.value, \"AY: \", acc_y.value, \"AZ: \",  acc_z.value, \"GX: \",\
+      \ gyro_x.value , \"GY: \",  gyro_y.value, \"GZ: \",  gyro_z.value, \"\\n\")\
+      \ \n\n\n    def work(self, input_items, output_items):\n        if self.first\
+      \ == True:\n            c_card = ctypes.c_byte(self.card)\n            skiq.init_card(c_card)\n\
       \            self.first = False\n        output_items[0][:] = input_items[0]\
       \ \n        return len(output_items[0])\n"
     affinity: ''
@@ -146,6 +130,87 @@ blocks:
     bus_source: false
     bus_structure: null
     coordinate: [904, 184.0]
+    rotation: 0
+    state: true
+- name: qtgui_freq_sink_x_0
+  id: qtgui_freq_sink_x
+  parameters:
+    affinity: ''
+    alias: ''
+    alpha1: '1.0'
+    alpha10: '1.0'
+    alpha2: '1.0'
+    alpha3: '1.0'
+    alpha4: '1.0'
+    alpha5: '1.0'
+    alpha6: '1.0'
+    alpha7: '1.0'
+    alpha8: '1.0'
+    alpha9: '1.0'
+    autoscale: 'False'
+    average: '1.0'
+    axislabels: 'True'
+    bw: samp_rate
+    color1: '"blue"'
+    color10: '"dark blue"'
+    color2: '"red"'
+    color3: '"green"'
+    color4: '"black"'
+    color5: '"cyan"'
+    color6: '"magenta"'
+    color7: '"yellow"'
+    color8: '"dark red"'
+    color9: '"dark green"'
+    comment: ''
+    ctrlpanel: 'False'
+    fc: '0'
+    fftsize: '1024'
+    freqhalf: 'True'
+    grid: 'False'
+    gui_hint: ''
+    label: Relative Gain
+    label1: ''
+    label10: ''''''
+    label2: ''''''
+    label3: ''''''
+    label4: ''''''
+    label5: ''''''
+    label6: ''''''
+    label7: ''''''
+    label8: ''''''
+    label9: ''''''
+    legend: 'True'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    name: '""'
+    nconnections: '1'
+    norm_window: 'False'
+    showports: 'False'
+    tr_chan: '0'
+    tr_level: '0.0'
+    tr_mode: qtgui.TRIG_MODE_FREE
+    tr_tag: '""'
+    type: complex
+    units: dB
+    update_time: '0.10'
+    width1: '1'
+    width10: '1'
+    width2: '1'
+    width3: '1'
+    width4: '1'
+    width5: '1'
+    width6: '1'
+    width7: '1'
+    width8: '1'
+    width9: '1'
+    wintype: window.WIN_BLACKMAN_hARRIS
+    ymax: '10'
+    ymin: '-140'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [1112, 88.0]
     rotation: 0
     state: true
 - name: qtgui_time_sink_x_0
@@ -245,12 +310,42 @@ blocks:
     coordinate: [1112, 328.0]
     rotation: 0
     state: true
+- name: sidekiq_sidekiq_rx_0
+  id: sidekiq_sidekiq_rx
+  parameters:
+    affinity: ''
+    alias: ''
+    bandwidth: 18e6
+    cal_mode: '0'
+    cal_type: '0'
+    card: '0'
+    comment: ''
+    frequency: 1000e6
+    gain_index: '1'
+    gain_mode: '1'
+    handle1: '0'
+    handle2: '100'
+    maxoutbuf: '0'
+    minoutbuf: '0'
+    pps_source: '0'
+    run_cal: '0'
+    sample_rate: samp_rate
+    timestamp_tags: '0'
+    trigger_src: '0'
+  states:
+    bus_sink: false
+    bus_source: false
+    bus_structure: null
+    coordinate: [472, 12.0]
+    rotation: 0
+    state: true
 
 connections:
-- [analog_sig_source_x_0, '0', epy_block_0, '0']
 - [blocks_message_strobe_0, strobe, epy_block_0, temp]
 - [blocks_message_strobe_1, strobe, epy_block_0, imu]
+- [epy_block_0, '0', qtgui_freq_sink_x_0, '0']
 - [epy_block_0, '0', qtgui_time_sink_x_0, '0']
+- [sidekiq_sidekiq_rx_0, '0', epy_block_0, '0']
 
 metadata:
   file_format: 1
