@@ -27,11 +27,10 @@ include(GrPybind)
 ########################################################################
 # Python Bindings
 ########################################################################
-
 list(APPEND sidekiq_python_files
     sidekiq_tx_python.cc
     sidekiq_rx_python.cc
-    telemetry_python.cc python_bindings.cc)
+    python_bindings.cc)
 
 GR_PYBIND_MAKE_OOT(sidekiq
    ../../..

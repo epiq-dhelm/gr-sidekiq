@@ -23,7 +23,6 @@ namespace py = pybind11;
 // BINDING_FUNCTION_PROTOTYPES(
     void bind_sidekiq_tx(py::module& m);
     void bind_sidekiq_rx(py::module& m);
-    void bind_telemetry(py::module& m);
 // ) END BINDING_FUNCTION_PROTOTYPES
 
 
@@ -54,6 +53,5 @@ PYBIND11_MODULE(sidekiq_python, m)
     // BINDING_FUNCTION_CALLS(
     bind_sidekiq_tx(m);
     bind_sidekiq_rx(m);
-    bind_telemetry(m);
     // ) END BINDING_FUNCTION_CALLS
 }
